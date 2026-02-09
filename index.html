@@ -16,29 +16,29 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 20px 0;
+      padding: 30px 0;
       min-height: 200%;
     }
 
     .container {
       background: #1e1e1e;
-      padding: 25px;
-      border-radius: 12px;
-      width: 400px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      padding: 30px;
+      border-radius: 14px;
+      width: 480px;
+      box-shadow: 0 0 18px rgba(0,0,0,0.6);
       text-align: center;
     }
 
-    input, textarea, button, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 6px;
-      border: none;
-      font-size: 16px;
-    }
+    h1 { font-size: 32px; }
 
-    textarea { height: 120px; }
+    input, button, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 18px;
+    }
 
     button {
       background: #4caf50;
@@ -46,26 +46,27 @@
       cursor: pointer;
     }
 
-    button.secondary {
-      background: #555;
-    }
+    button.secondary { background: #555; }
 
     .choice {
       background: #333;
+      margin-top: 8px;
     }
 
-    .choice:hover {
-      background: #444;
-    }
+    .choice:hover { background: #444; }
 
     .word {
-      font-size: 22px;
-      margin: 15px 0;
+      font-size: 28px;
+      margin: 22px 0;
     }
 
     .hidden { display: none; }
 
-    #allAnswers { text-align: left; margin-top: 15px; word-wrap: break-word; }
+    #allAnswers {
+      text-align: left;
+      margin-top: 20px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -95,9 +96,8 @@
     <div id="quiz" class="hidden">
       <div id="score">Score: 0 / 0</div>
       <div class="word" id="currentWord"></div>
-      <input type="text" id="answer" placeholder="Type in">
+      <input type="text" id="answer" placeholder="Type your answer">
       <div id="choices" class="hidden"></div>
-      <button id="submitBtn" onclick="checkAnswer()">Submit</button>
       <div id="result"></div>
       <button class="secondary" onclick="endTest()">Finish Test</button>
     </div>
@@ -107,7 +107,7 @@
     <div id="summary" class="hidden">
       <h2>Test Complete</h2>
       <p id="finalScore"></p>
-      <button onclick="resetTest()">Edit Words / Restart</button>
+      <button onclick="resetTest()">Restart</button>
     </div>
   </div>
 
@@ -122,50 +122,39 @@
       '7': ['ambulō = walk','antequam = before','cīvis = citizen','clārus = famous, clear','dīcō = say, speak, tell','domina = mistress','dominus = master','et ... et = both ... and','forum = forum, market place','habitō = live','hic = this, these','hortus = garden','ille = that, those, he, she, it','is = he, she, it, that, those','līberō = set free','lībertus = freedman, ex-slave','mūrus = wall','nūntius = messenger','omnis = all, every','paucī = few, a few','postquam = after, when','quamquam = although','quī = who, which','quis? = who, what, which','quoque = also, too','salūtō = greet','senātor = senator','ubi = when, where','via = street, road, way'],
       '8': ['abeō = go away','adeō = go to, approach','appropinquō = approach, come near to','clāmor = shout, shouting, noise','conveniō = come together, gather, meet','cupiō = want, desire','ego = I, me','enim = for','epistula = letter','exeō = go out from, go away','ferōx = fierce, ferocious','frūstrā = in vain','ineō = go into, enter','labōrō = work, toil','legō = read, choose','liber = book','longus = long','magis = more','magister = teacher','maior = bigger, larger, greater','maximē = very greatly','maximus = greatest, largest, biggest','medius = middle','melior = better','minimus = smallest, least','minor = smaller, less','nōbilis = of noble birth, renowned','nōs = we, us','nōtus = famous, well known','optimus = best','peior = worse','pereō = die, perish','pessimus = worst','plūrēs = more','plūrimus = most, very many','plūs = more','quam = than, how, as ... as possible','redeō = go back, come back, return','scrībō = write','sē = himself, herself, itself, themselves','senex = old man','stultus = stupid, foolish','trānseō = go over, cross','tū = you','vir = man, husband','vōs = you all, you']
     };
-
+    
     let words = [];
-    let current = {};
+    let current = null;
     let score = 0;
     let total = 0;
     let mode = 'mc';
+    let answered = false;
 
     function loadChapter() {
       const chapter = document.getElementById('chapterSelect').value;
-      if (!chapters[chapter]) {
-        document.getElementById('setupError').textContent = 'Chapter not found!';
-        words = [];
-        return;
-      }
       words = chapters[chapter].map(line => {
-        const parts = line.split('=');
-        const defs = parts[1].split(',').map(d => normalize(d.trim()));
-        return { word: parts[0].trim(), definitions: defs };
+        const i = line.indexOf('=');
+        return {
+          word: line.slice(0, i).trim(),
+          definitions: line.slice(i + 1).split(',').map(d => normalize(d))
+        };
       });
-      document.getElementById('allAnswers').classList.add('hidden');
-      document.getElementById('allAnswers').innerHTML = '';
     }
 
     function showAllAnswers() {
       const chapter = document.getElementById('chapterSelect').value;
-      if (!chapters[chapter]) return;
-      const container = document.getElementById('allAnswers');
-      container.innerHTML = chapters[chapter].join('<br>');
-      container.classList.remove('hidden');
-      container.scrollIntoView({ behavior: 'smooth' });
+      const box = document.getElementById('allAnswers');
+      if (!box.classList.contains('hidden')) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+      } else {
+        box.innerHTML = chapters[chapter].join('<br>');
+        box.classList.remove('hidden');
+      }
     }
 
-    document.addEventListener('keydown', e => {
-      if (!document.getElementById('quiz') || document.getElementById('quiz').classList.contains('hidden')) return;
-      if (mode === 'type' && e.key === 'Enter') { e.preventDefault(); checkAnswer(); }
-      if (mode === 'mc' && ['1','2','3','4'].includes(e.key)) {
-        const idx = parseInt(e.key, 10) - 1;
-        const buttons = document.querySelectorAll('#choices button');
-        if (buttons[idx]) buttons[idx].click();
-      }
-    });
-
     function startTest() {
-      if (words.length === 0) loadChapter();
+      loadChapter();
       mode = document.getElementById('modeSelect').value;
       score = 0; total = 0;
       document.getElementById('score').textContent = 'Score: 0 / 0';
@@ -175,6 +164,7 @@
     }
 
     function nextWord() {
+      answered = false;
       current = words[Math.floor(Math.random() * words.length)];
       document.getElementById('currentWord').textContent = current.word;
       document.getElementById('answer').value = '';
@@ -184,50 +174,43 @@
       if (mode === 'mc') {
         document.getElementById('answer').classList.add('hidden');
         document.getElementById('choices').classList.remove('hidden');
-        document.getElementById('submitBtn').classList.add('hidden');
         createChoices();
       } else {
         document.getElementById('answer').classList.remove('hidden');
         document.getElementById('choices').classList.add('hidden');
-        document.getElementById('submitBtn').classList.remove('hidden');
         document.getElementById('answer').focus();
       }
     }
 
     function createChoices() {
-      const defs = words.flatMap(w => w.definitions);
-      const options = [current.definitions[0]];
-      while (options.length < 4 && defs.length > options.length) {
-        const d = defs[Math.floor(Math.random() * defs.length)];
-        if (!options.includes(d)) options.push(d);
+      const pool = words.flatMap(w => w.definitions);
+      const opts = [current.definitions[0]];
+      while (opts.length < 4) {
+        const d = pool[Math.floor(Math.random() * pool.length)];
+        if (!opts.includes(d)) opts.push(d);
       }
-      options.sort(() => Math.random() - 0.5);
-      options.forEach((opt,i) => {
-        const btn = document.createElement('button');
-        btn.textContent = `${i+1}. ${opt}`;
-        btn.className = 'choice';
-        btn.onclick = () => checkAnswer(opt);
-        document.getElementById('choices').appendChild(btn);
+      opts.sort(() => Math.random() - 0.5);
+      opts.forEach(opt => {
+        const b = document.createElement('button');
+        b.textContent = opt;
+        b.className = 'choice';
+        b.onclick = () => answered ? nextWord() : checkAnswer(opt);
+        document.getElementById('choices').appendChild(b);
       });
     }
 
-    function checkAnswer(selected) {
-      let userAnswer = selected;
-      if (mode === 'type') {
-        userAnswer = normalize(document.getElementById('answer').value);
-        if (!userAnswer) return;
-      }
+    function checkAnswer(ans) {
+      if (answered) return;
+      answered = true;
+      const user = mode === 'type' ? normalize(document.getElementById('answer').value) : ans;
       total++;
-      // Only compare normalized answers, ignore punctuation
-      const correct = current.definitions.some(def => normalize(userAnswer) === normalize(def));
-      if ((mode==='mc' && current.definitions.includes(userAnswer)) || (mode==='type' && correct)) {
+      if (current.definitions.includes(user)) {
         score++;
-        document.getElementById('result').textContent = '✅ Correct!';
+        document.getElementById('result').textContent = '✅ Correct';
       } else {
-        document.getElementById('result').textContent = '❌ Incorrect. Correct answer(s): ' + current.definitions.join(', ');
+        document.getElementById('result').textContent = '❌ ' + current.definitions.join(', ');
       }
       document.getElementById('score').textContent = `Score: ${score} / ${total}`;
-      setTimeout(nextWord, 1200);
     }
 
     function endTest() {
@@ -241,6 +224,17 @@
       document.getElementById('setup').classList.remove('hidden');
       document.getElementById('allAnswers').classList.add('hidden');
     }
+
+    document.addEventListener('keydown', e => {
+      if (document.getElementById('quiz').classList.contains('hidden')) return;
+      if (e.key === 'Enter') answered ? nextWord() : checkAnswer();
+    });
   </script>
 </body>
 </html>
+
+'5': ['absum = be absent, be away, be distant from','adsum = be here, be present','agricola = farmer','ancilla = female slave','aqua = water','bibō = drink','cēna = dinner, meal','cēterī = the rest, the others','cibus = food','clāmō = shout','cōnsūmō = eat','fessus = tired','festīnō = hurry','iterum = again','lūdus = school, game, festival','magnopere = greatly, very much','mortuus = dead','mox = soon','nunc = now','parō = prepare, provide','rīdeō = laugh, smile, laugh at','sacer = sacred','servus = slave','spectō = look at, watch','taberna = shop, inn','urbs = city','veniō = come','vīlla = house, country villa','vīnum = wine','vocō = call'],
+      '6': ['altus = high, deep','amīcus = friend','annus = year','dormiō = sleep','emō = buy','hīc = here','hōra = hour','iam = now, already','ibi = there','itaque = and so, therefore','iuvenis = young man','locus = place','meus = my','moneō = warn, advise','nōlī = do not','nōlīte = do not','noster = our','novus = new','numquam = never','ostendō = show','parvus = small','puella = girl','puer = boy','respondeō = reply','rogō = ask, ask for','sīc = thus, in this way','suus = his, her, its, their','tuus = your, yours','verbum = word','vester = your, yours','videō = see'],
+      '7': ['ambulō = walk','antequam = before','cīvis = citizen','clārus = famous, clear','dīcō = say, speak, tell','domina = mistress','dominus = master','et ... et = both ... and','forum = forum, market place','habitō = live','hic = this, these','hortus = garden','ille = that, those, he, she, it','is = he, she, it, that, those','līberō = set free','lībertus = freedman, ex-slave','mūrus = wall','nūntius = messenger','omnis = all, every','paucī = few, a few','postquam = after, when','quamquam = although','quī = who, which','quis? = who, what, which','quoque = also, too','salūtō = greet','senātor = senator','ubi = when, where','via = street, road, way'],
+      '8': ['abeō = go away','adeō = go to, approach','appropinquō = approach, come near to','clāmor = shout, shouting, noise','conveniō = come together, gather, meet','cupiō = want, desire','ego = I, me','enim = for','epistula = letter','exeō = go out from, go away','ferōx = fierce, ferocious','frūstrā = in vain','ineō = go into, enter','labōrō = work, toil','legō = read, choose','liber = book','longus = long','magis = more','magister = teacher','maior = bigger, larger, greater','maximē = very greatly','maximus = greatest, largest, biggest','medius = middle','melior = better','minimus = smallest, least','minor = smaller, less','nōbilis = of noble birth, renowned','nōs = we, us','nōtus = famous, well known','optimus = best','peior = worse','pereō = die, perish','pessimus = worst','plūrēs = more','plūrimus = most, very many','plūs = more','quam = than, how, as ... as possible','redeō = go back, come back, return','scrībō = write','sē = himself, herself, itself, themselves','senex = old man','stultus = stupid, foolish','trānseō = go over, cross','tū = you','vir = man, husband','vōs = you all, you']
+    };
